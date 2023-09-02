@@ -15,5 +15,5 @@ app.use(cors());
 app.use("/api", apiPaths);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://192.168.0.102:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 }); //starts local host
