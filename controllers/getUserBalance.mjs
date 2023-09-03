@@ -9,42 +9,45 @@ import { BIP32Factory } from "bip32";
 // const BIP32Factory = require("bip32");
 import * as bip39 from "bip39";
 // const bip39 = require("bip39");
+import mempoolJS from "@mempool/mempool.js";
 
 const bip32 = BIP32Factory(ecc);
 
 // const ecpair = ECPairFactory(ecc);
 const MAINNET = bitcoin.networks.bitcoin;
 
-export const generateAddress = (req, res) => {
+export const getUserBalance = async (req, res) => {
   const data = req.body;
   try {
-    // console.log(data.mnemonic);
     const mnemonic = data.mnemonic;
-    const addressNum = data.numAddresses;
-    // const mnemonic =
-    //   "input kind sister rabbit lawsuit risk struggle humble cruise borrow glad screen";
+    const numAddresses = data.numAddresses;
+
     const seed = bip39.mnemonicToSeedSync(mnemonic);
     const root = bip32.fromSeed(seed);
     const derivationPath = "m/44'/0'/0'/0";
 
-    const child = root.derivePath(`${derivationPath}/${addressNum}`);
-    const address = bitcoin.payments.p2pkh({ pubkey: child.publicKey }).address;
-    // const node = bip32.fromSeed(seed);
-    // const strng = node.toBase58();
-    // const restored = bip32.fromBase58(strng);
+    let addressesInformation = [];
 
-    // const address = getAddress(node);
-    // const test = getAddress(restored);
+    for (let i = 0; i < numAddresses; i++) {
+      const child = root.derivePath(`${derivationPath}/${i}`);
 
-    res.send(JSON.stringify(address));
+      const address = bitcoin.payments.p2pkh({
+        pubkey: child.publicKey,
+      }).address;
+
+      const {
+        bitcoin: { addresses },
+      } = mempoolJS({
+        hostname: "mempool.space",
+      });
+
+      const myAddress = await addresses.getAddress({ address });
+
+      addressesInformation.push(myAddress);
+    }
+
+    res.send(JSON.stringify(addressesInformation));
   } catch {
     res.send(JSON.stringify("ERROR"));
   }
 };
-
-function getAddress(node) {
-  return bitcoin.payments.p2pkh({
-    pubkey: node.publicKey,
-    MAINNET,
-  }).address;
-}
